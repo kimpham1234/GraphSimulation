@@ -23,10 +23,17 @@ public class GraphModelTest {
 		graph.addEdge(b, d);
 		graph.addEdge(b, e);
 		graph.addEdge(d, e);
-		
-		
+		graph.dfs();
+	
 		System.out.println(graph.printAdjacencyList());
 		
+		
+		System.out.println("here");
+		System.out.println(graph.getPath(e));
+		System.out.println(graph.getPath(d));
+		System.out.println(graph.getPath(c));
+		System.out.println(graph.getPath(b));
+		System.out.println(graph.getPath(a));
 	}
 
 	

@@ -2,15 +2,16 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import javax.swing.JComponent;
 
-
-public class MyGraph<T> {
+public class MyGraph<T>{
 	
 	static MyVertex nil = new MyVertex<String>("leuleu");
 	private ArrayList<MyVertex>[] adjacencyList;
 	int vertexNum;
 	int maxVertexNum;
 	int time;
+	String path;
 	
 	public MyGraph(int maxVertexNum){
 		adjacencyList = new ArrayList[maxVertexNum];
@@ -39,6 +40,23 @@ public class MyGraph<T> {
 			return;
 		adjacencyList[a.index].add(b);
 		adjacencyList[b.index].add(a);
+	}
+	
+	public void removeVertex(MyVertex a){
+		adjacencyList[a.index].clear();
+		for(int i = a.index; i < vertexNum-1; i++){
+			adjacencyList[i] = adjacencyList[i+1];
+		}
+		vertexNum--;
+		for(int i = 0; i < vertexNum; i++){
+			if(adjacencyList[i].contains(a))
+				adjacencyList[i].remove(a);
+		}
+	}
+	
+	public void removeEdge(MyVertex a, MyVertex b){
+		adjacencyList[a.index].remove(b);
+		adjacencyList[b.index].remove(a);
 	}
 	
 	public String printAdjacencyList(){
@@ -117,4 +135,21 @@ public class MyGraph<T> {
 			time++;
 			u.f = time;
 		}
+		
+		//called after dfs or bfs to get path to a vertex
+		public String getPath(MyVertex a){
+	        path ="";
+	        if(a.parent !=null)
+			printPathRecursive(a);
+			return path;
+		}
+	        
+		
+		//recursively get the path
+		private void printPathRecursive(MyVertex a){
+			if(a.parent!=nil)
+				printPathRecursive(a.parent);
+			path+=a.toString();
+		}
+		
 }

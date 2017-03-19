@@ -9,4 +9,8 @@ public interface MoveableShape {
 	void translate(int dx, int dy);
 	boolean contains(Point2D p);
 	Rectangle2D getBounds();
+	boolean isSelected();
+	void drawSelected(Graphics2D g2);
+	
 }
+

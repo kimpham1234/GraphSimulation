@@ -7,6 +7,8 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import javax.swing.JComponent;
 
@@ -14,16 +16,16 @@ public class GraphComponent extends JComponent{
 	ArrayList<MyVertex> vertices;
 	ArrayList<MyEdge> edges;
 	MyGraph<String> graph;
-	MyVertex selected1;
-	MyVertex selected2;
+	Queue<MyVertex> selected;
+	MyVertex dragged;
 	MyEdge selectedEdge;
-	boolean first = true;
-	
+	final int MAX_SIZE = 100;
 	
 	public GraphComponent(){
 		vertices = new ArrayList<>();
 		edges = new ArrayList<>();
-		graph = new MyGraph(10);
+		graph = new MyGraph(MAX_SIZE);
+		selected = new LinkedList<>();
 		this.addMouseMotionListener(new GraphComponent.MyMouseMotionListener());
 		this.addMouseListener(new GraphComponent.MyMouseListener());
 	}
@@ -33,49 +35,91 @@ public class GraphComponent extends JComponent{
 		graph.addVertex(a);
 	}
 	
+	public void delete(){
+		while(!selected.isEmpty()){
+			MyVertex v = selected.poll();
+			vertices.remove(v);
+			graph.removeVertex(v);
+		}
+		
+		if(selectedEdge!=null && selectedEdge.isSelected()){
+			edges.remove(selectedEdge);
+			graph.removeEdge((MyVertex) selectedEdge.v1, (MyVertex) selectedEdge.v2);
+		}
+	}
+	
+	public void runDFS(){
+		graph.dfs();
+	}	
+	
+	public void runBFS(){
+		MyVertex s = selected.poll();
+		graph.bfs(s);
+	}
+	
+	public String getPath(){
+		if(!selected.isEmpty()){
+			MyVertex s = selected.poll();
+			s.isSelected = false;
+			return graph.getPath(s);
+		}else{
+			return "nothing in queue";
+		}
+		
+	}
+	
+	public boolean sourceSelected(){
+		if(!selected.isEmpty())
+			return true;
+	    return false;
+	}
+	
 	public void sampleAddEdge(MyEdge e){
 		edges.add(e);
 		graph.addEdge((MyVertex) e.v1, (MyVertex) e.v2);
 	}
 	
 	public void addEdge(){
-		if(selected1!=null && selected2 != null){
+		if(selected.size() == 2){
+			MyVertex selected1 = selected.poll();
+			MyVertex selected2 = selected.poll();
+			
 			MyEdge e = new MyEdge(selected1, selected2);
 			edges.add(e);
 			graph.addEdge((MyVertex) selected1, (MyVertex) selected2);
-		}else{
-			System.out.println(selected1.toString() +"//"+ selected2);
+			selected1.isSelected = false;
+			selected2.isSelected = false;
 		}
-		clearSelected();
 		
 	}
 	
 	public void clearSelected(){
-		selected1 = null;
-		selected2 = null;
-		selectedEdge = null;
+		System.out.println("Clearing " + selected.toString());
+		while(!selected.isEmpty()){
+			
+			MyVertex temp = selected.poll();
+			temp.isSelected = false;
+			System.out.println("Clearing "+ temp);
+		}
+		
+		if(selectedEdge!=null){
+			selectedEdge.selected = false;
+			selectedEdge = null;
+		}
+		repaint();
 	}
 	
 	public void paintComponent(Graphics g){
-		//System.out.println("did draw");
+		
 		Graphics2D g2 = (Graphics2D) g;
-		for(MyVertex a : vertices){
-		//	System.out.println("Did have vertex");
+		for(MyVertex a : vertices)
 			a.draw(g2);
-		}
-		for(MyEdge e : edges){
-		//	System.out.println("Did have edge");
+		
+		for(MyEdge e : edges)
 			e.draw(g2);
-		}
+		
 		
 	}
-	
-	private void drawSelected(Graphics2D g2){
-		if(selected1 != null){
-			Rectangle2D rect = selected1.getBounds();
-		}
-	}
-	
 	
 	public String printAdjacencyList(){
 		return graph.printAdjacencyList();
@@ -90,14 +134,14 @@ public class GraphComponent extends JComponent{
 			Point2D p = e.getPoint();
 			for(MyVertex v : vertices){
 				if(v.contains(p)){
-					selected1 = v;
+					dragged = v;
 					break;
 				}
 			}
 			double x = p.getX();
 			double y = p.getY();
-			
-			selected1.translate((int)x-selected1.x,(int) y-selected1.y);
+			if(dragged!=null)
+				dragged.translate((int)x-dragged.x,(int) y-dragged.y);
 			repaint();
 		}
 
@@ -109,34 +153,109 @@ public class GraphComponent extends JComponent{
 	}
 
 		class MyMouseListener implements MouseListener{
-
+			
 			@Override
+			public void mouseClicked(MouseEvent e) {
+				System.out.println("Start " + selected.toString());
+				Point2D p = e.getPoint();
+				boolean found = false;
+				MyVertex temp;
+				
+				for(MyVertex v : vertices){
+					if(v.contains(p)){
+						found = true;
+					
+						//if v is selected
+						if(v.isSelected){
+							v.isSelected = false;
+							if(selected.contains(v)){
+								temp = selected.poll();
+								if(temp!=v){
+									selected.add(temp);
+									temp = selected.poll();
+								}
+							}
+						}else{
+							v.isSelected = true;
+							if(selected.size() == 2){
+								temp = selected.poll();
+								temp.isSelected = false;
+								selected.add(v);
+							}else if(selected.size() < 2){
+								selected.add(v);
+							}
+						}	
+					}
+				}
+				
+				for(MyEdge ed : edges){
+					//System.out.println("edge");
+					if(ed.contains(p)){
+					//	System.out.println("Edge found");
+						selectedEdge = ed;
+						selectedEdge.selected = true;
+						found = true;
+					}
+				}
+				
+				if(!found)
+					clearSelected();
+				repaint();
+				System.out.println("Selected list " + selected.toString());
+				
+				
+			}
+
+/*			@Override
 			public void mouseClicked(MouseEvent e) {
 				Point2D p = e.getPoint();
 				boolean found = false;
-				System.out.println("Clicked");
+				System.out.println("In mouse clicked");
 				for(MyVertex v : vertices){
+					System.out.println("comparing " + v);
 					if(v.contains(p)){
-						if(first){
-							selected1 = v;
-							first = false;
-						}else{
-							selected2 = v;
-							first = true;
+						if(v.isSelected){
+							System.out.println("undo selected " + v);
+							v.isSelected = false;
+							MyVertex temp;
+							if(selected.contains(v)){
+								temp = selected.poll();
+								if(temp!=v){
+									MyVertex newTemp = selected.poll();
+									newTemp.isSelected = false;
+									selected.offer(temp);
+								}
+							}
 						}
+						else{
+							System.out.println("new stuff is selected");
+							v.isSelected = true;
+							if(selected.size()==2){
+								MyVertex temp = selected.poll();
+								temp.isSelected = false;
+								selected.offer(v);
+							}else{
+								selected.offer(v);
+							}	
+						}
+						found = true;
 					}
 				}
 				for(MyEdge ed : edges){
-					if(ed.contains(p))
+					//System.out.println("edge");
+					if(ed.contains(p)){
+					//	System.out.println("Edge found");
 						selectedEdge = ed;
+						selectedEdge.selected = true;
+						found = true;
+					}
 				}
 				if(!found){
 					clearSelected();
 				}
-				System.out.println("selected 1 " + selected1);
-				System.out.println("selected 2 " + selected2);
+				repaint();
 			}
-
+*/
 			@Override
 			public void mousePressed(MouseEvent e) {
 				// TODO Auto-generated method stub
