@@ -53,7 +53,7 @@ public class GraphComponent extends JComponent{
 	}	
 	
 	public void runBFS(){
-		MyVertex s = selected.poll();
+		MyVertex s = selected.peek();
 		graph.bfs(s);
 	}
 	

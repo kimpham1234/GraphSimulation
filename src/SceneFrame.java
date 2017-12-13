@@ -70,7 +70,7 @@ public class SceneFrame extends JFrame{
 		this.add(nav, BorderLayout.NORTH);
 		this.add(comp, BorderLayout.CENTER);
 		this.add(pathPanel, BorderLayout.SOUTH);
-		//loadSamples();
+		loadSamples();
 		
 		this.setSize(700, 700);;
 		this.setVisible(true);
