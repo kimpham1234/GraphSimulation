@@ -7,4 +7,4 @@ Graph Editor that allows you to add/delete nodes and edges, and also to run BFS/
 2. Navigate to src/SampleScene.java
 3. Run the file
 
-(img.png)
+![Alt text](/img.jpg?raw=true "Screenshot")
